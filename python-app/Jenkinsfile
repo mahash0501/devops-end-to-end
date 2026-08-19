@@ -58,8 +58,14 @@ pipeline {
         stage('ECR Login') {
             steps {
                 withCredentials([
-                    [$class: 'AmazonWebServicesCredentialsBinding',
-                     credentialsId: 'aws-ecr-credentials']
+                    string(
+                        credentialsId: 'AWS_ACCESS_KEY_ID',
+                        variable: 'AWS_ACCESS_KEY_ID'
+                    ),
+                    string(
+                        credentialsId: 'AWS_SECRET_ACCESS_KEY',
+                        variable: 'AWS_SECRET_ACCESS_KEY'
+                    )
                 ]) {
                     sh '''
                         aws ecr get-login-password \
@@ -78,6 +84,17 @@ pipeline {
                     docker push ${IMAGE_NAME}:${BUILD_NUMBER}
                 '''
             }
+        }
+    }
+
+    post {
+        success {
+            echo "Pipeline completed successfully."
+            echo "Docker image: ${IMAGE_NAME}:${BUILD_NUMBER}"
+        }
+
+        failure {
+            echo "Pipeline failed. Check the failed stage."
         }
     }
 }
