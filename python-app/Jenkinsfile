@@ -1,6 +1,13 @@
 pipeline {
     agent any
 
+    environment {
+        AWS_REGION = 'us-east-1'
+        ECR_REGISTRY = '541739678686.dkr.ecr.us-east-1.amazonaws.com'
+        ECR_REPOSITORY = 'devops-python-app'
+        IMAGE_NAME = "${ECR_REGISTRY}/${ECR_REPOSITORY}"
+    }
+
     stages {
 
         stage('Checkout') {
@@ -30,8 +37,9 @@ pipeline {
         stage('Docker Build') {
             steps {
                 sh '''
-                    cd python-app
-                    docker build -t devops-python-app:${BUILD_NUMBER} .
+                    docker build \
+                    -t ${IMAGE_NAME}:${BUILD_NUMBER} \
+                    python-app
                 '''
             }
         }
@@ -42,7 +50,32 @@ pipeline {
                     trivy image \
                     --severity HIGH,CRITICAL \
                     --exit-code 1 \
-                    devops-python-app:${BUILD_NUMBER}
+                    ${IMAGE_NAME}:${BUILD_NUMBER}
+                '''
+            }
+        }
+
+        stage('ECR Login') {
+            steps {
+                withCredentials([
+                    [$class: 'AmazonWebServicesCredentialsBinding',
+                     credentialsId: 'aws-ecr-credentials']
+                ]) {
+                    sh '''
+                        aws ecr get-login-password \
+                        --region ${AWS_REGION} | \
+                        docker login \
+                        --username AWS \
+                        --password-stdin ${ECR_REGISTRY}
+                    '''
+                }
+            }
+        }
+
+        stage('Push to ECR') {
+            steps {
+                sh '''
+                    docker push ${IMAGE_NAME}:${BUILD_NUMBER}
                 '''
             }
         }
