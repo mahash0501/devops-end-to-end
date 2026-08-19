@@ -1,0 +1,20 @@
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+
+# Terraform variables
+*.tfvars
+*.tfvars.json
+
+# Secrets
+.env
+*.pem
+
+# Python
+__pycache__/
+*.pyc
+
+# Jenkins
+jenkins_home/
