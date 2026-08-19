@@ -11,18 +11,31 @@ pipeline {
 
         stage('Python Test') {
             steps {
+                dir('python-app') {
+                    sh '''
+                        python3 --version
+                        python3 -m pip install -r requirements.txt
+                        python3 -m py_compile app.py
+                    '''
+                }
+            }
+        }
+
+        stage('Checkov Scan') {
+            steps {
                 sh '''
-                    python3 --version
-                    python3 -m py_compile app.py
+                    checkov -f terraform1/main.tf
                 '''
             }
         }
 
         stage('Docker Build') {
             steps {
-                sh '''
-                    docker build -t devops-python-app:${BUILD_NUMBER} .
-                '''
+                dir('python-app') {
+                    sh '''
+                        docker build -t devops-python-app:${BUILD_NUMBER} .
+                    '''
+                }
             }
         }
 
